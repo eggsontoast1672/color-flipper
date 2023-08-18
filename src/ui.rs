@@ -1,5 +1,15 @@
-use macroquad::prelude as mq;
-use macroquad::prelude::*;
+use std::{
+    fmt::{self, Display, Formatter},
+    str::FromStr,
+};
+
+use macroquad::prelude::{self as mq, *};
+
+const COLOR_WIDTH: f32 = WINDOW_WIDTH / 2.0 - COLOR_HORIZONTAL_PADDING * 2.0 - LINE_THICKNESS / 2.0;
+const COLOR_HEIGHT: f32 = 50.0;
+const COLOR_RADIUS: f32 = 15.0;
+const COLOR_HORIZONTAL_PADDING: f32 = 100.0;
+const COLOR_VERTICAL_PADDING: f32 = 20.0;
 
 const ENTRY_X: f32 = WINDOW_WIDTH / 2.0 - ENTRY_WIDTH / 2.0;
 const ENTRY_Y: f32 = WINDOW_HEIGHT / 2.0 - ENTRY_HEIGHT / 2.0;
@@ -18,12 +28,32 @@ pub const WINDOW_HEIGHT: f32 = 600.0;
 
 fn draw_rounded_rectangle(x: f32, y: f32, w: f32, h: f32, r: f32, color: mq::Color) {
     draw_circle(x + r, y + r, r, color);
-    draw_circle(x + w - r, y + r, r, color);
+    draw_circle(x + w - r, y + r, r, color); // this
     draw_circle(x + r, y + h - r, r, color);
-    draw_circle(x + w - r, y + h - r, r, color);
+    draw_circle(x + w - r, y + h - r, r, color); // this
 
     draw_rectangle(x + r, y, w - 2.0 * r, h, color);
     draw_rectangle(x, y + r, w, h - 2.0 * r, color);
+}
+
+#[derive(Debug)]
+enum ColorErrorKind {
+    InvalidHexit,
+    InvalidFormat,
+}
+
+#[derive(Debug)]
+struct ParseColorError {
+    kind: ColorErrorKind,
+}
+
+impl Display for ParseColorError {
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+        match self.kind {
+            ColorErrorKind::InvalidHexit => write!(f, "invalid hexit found in string"),
+            ColorErrorKind::InvalidFormat => write!(f, "string does not conform to hex format"),
+        }
+    }
 }
 
 #[derive(Clone, Copy)]
@@ -40,6 +70,37 @@ impl Color {
 
     fn inverted(&self) -> Self {
         Color::new(!self.data[0], !self.data[1], !self.data[2])
+    }
+}
+
+impl FromStr for Color {
+    type Err = ParseColorError;
+
+    // TODO: Optimize
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        if s.len() != 7 || &s[0..1] != "#" {
+            return Err(ParseColorError {
+                kind: ColorErrorKind::InvalidFormat,
+            });
+        }
+
+        let Ok(r) = u8::from_str_radix(&s[1..3], 16) else {
+            return Err(ParseColorError {
+                kind: ColorErrorKind::InvalidHexit,
+            });
+        };
+        let Ok(g) = u8::from_str_radix(&s[3..5], 16) else {
+            return Err(ParseColorError {
+                kind: ColorErrorKind::InvalidHexit,
+            });
+        };
+        let Ok(b) = u8::from_str_radix(&s[5..7], 16) else {
+            return Err(ParseColorError {
+                kind: ColorErrorKind::InvalidHexit,
+            });
+        };
+
+        Ok(Color::new(r, g, b))
     }
 }
 
@@ -65,6 +126,7 @@ pub struct Ui {
 
 impl Ui {
     pub fn draw(&self) {
+        // Left colored area
         draw_rectangle(
             0.0,
             0.0,
@@ -72,6 +134,8 @@ impl Ui {
             WINDOW_HEIGHT,
             self.color.into(),
         );
+
+        // Right colored area
         draw_rectangle(
             WINDOW_WIDTH / 2.0,
             0.0,
@@ -79,14 +143,18 @@ impl Ui {
             WINDOW_HEIGHT,
             self.color.inverted().into(),
         );
+
+        // Vertical line
         draw_line(
-            screen_width() / 2.0 - LINE_THICKNESS / 2.0,
+            WINDOW_WIDTH / 2.0,
             0.0,
-            screen_width() / 2.0 - LINE_THICKNESS / 2.0,
-            screen_height(),
+            WINDOW_WIDTH / 2.0,
+            WINDOW_HEIGHT,
             LINE_THICKNESS,
             LINE_COLOR,
         );
+
+        // Entry border
         draw_rounded_rectangle(
             ENTRY_X - LINE_THICKNESS,
             ENTRY_Y - LINE_THICKNESS,
@@ -95,6 +163,8 @@ impl Ui {
             ENTRY_RADIUS + LINE_THICKNESS,
             LINE_COLOR,
         );
+
+        // Entry field
         draw_rounded_rectangle(
             ENTRY_X,
             ENTRY_Y,
@@ -103,6 +173,8 @@ impl Ui {
             ENTRY_RADIUS,
             ENTRY_COLOR,
         );
+
+        // Entry field text
         draw_text(
             self.input.as_str(),
             ENTRY_X + ENTRY_RADIUS,
@@ -110,6 +182,46 @@ impl Ui {
             ENTRY_HEIGHT,
             TEXT_COLOR,
         );
+
+        // Left color field border
+        draw_rounded_rectangle(
+            COLOR_HORIZONTAL_PADDING,
+            COLOR_VERTICAL_PADDING,
+            COLOR_WIDTH,
+            COLOR_HEIGHT,
+            COLOR_RADIUS,
+            LINE_COLOR,
+        );
+
+        // Left color field
+        draw_rounded_rectangle(
+            COLOR_HORIZONTAL_PADDING + LINE_THICKNESS,
+            COLOR_VERTICAL_PADDING + LINE_THICKNESS,
+            COLOR_WIDTH - LINE_THICKNESS * 2.0,
+            COLOR_HEIGHT - LINE_THICKNESS * 2.0,
+            COLOR_RADIUS - LINE_THICKNESS,
+            WHITE,
+        );
+
+        // Right color field border
+        draw_rounded_rectangle(
+            WINDOW_WIDTH / 2.0 + LINE_THICKNESS / 2.0 + COLOR_HORIZONTAL_PADDING,
+            COLOR_VERTICAL_PADDING,
+            COLOR_WIDTH,
+            COLOR_HEIGHT,
+            COLOR_RADIUS,
+            LINE_COLOR,
+        );
+
+        // Right color field
+        draw_rounded_rectangle(
+            WINDOW_WIDTH / 2.0 + LINE_THICKNESS / 2.0 + COLOR_HORIZONTAL_PADDING + LINE_THICKNESS,
+            COLOR_VERTICAL_PADDING + LINE_THICKNESS,
+            COLOR_WIDTH - LINE_THICKNESS * 2.0,
+            COLOR_HEIGHT - LINE_THICKNESS * 2.0,
+            COLOR_RADIUS - LINE_THICKNESS,
+            WHITE,
+        )
     }
 
     pub fn update(&mut self) {
@@ -137,7 +249,15 @@ impl Ui {
                 KeyCode::D => self.add_character('d'),
                 KeyCode::E => self.add_character('e'),
                 KeyCode::F => self.add_character('f'),
-                KeyCode::Backspace => self.remove_character(),
+                KeyCode::Enter => {
+                    if let Ok(color) = self.input.parse::<Color>() {
+                        self.color = color;
+                    }
+                    self.input.clear();
+                }
+                KeyCode::Backspace => {
+                    self.input.pop();
+                }
                 _ => (),
             };
         }
@@ -147,10 +267,6 @@ impl Ui {
         if self.input.len() < 7 {
             self.input.push(ch);
         }
-    }
-
-    fn remove_character(&mut self) {
-        self.input.pop();
     }
 }
 
