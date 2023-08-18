@@ -1,9 +1,6 @@
-use std::{
-    fmt::{self, Display, Formatter},
-    str::FromStr,
-};
-
 use macroquad::prelude::{self as mq, *};
+
+use crate::color::Color;
 
 const COLOR_WIDTH: f32 = WINDOW_WIDTH / 2.0 - COLOR_HORIZONTAL_PADDING * 2.0 - LINE_THICKNESS / 2.0;
 const COLOR_HEIGHT: f32 = 50.0;
@@ -34,89 +31,6 @@ fn draw_rounded_rectangle(x: f32, y: f32, w: f32, h: f32, r: f32, color: mq::Col
 
     draw_rectangle(x + r, y, w - 2.0 * r, h, color);
     draw_rectangle(x, y + r, w, h - 2.0 * r, color);
-}
-
-#[derive(Debug)]
-enum ColorErrorKind {
-    InvalidHexit,
-    InvalidFormat,
-}
-
-#[derive(Debug)]
-struct ParseColorError {
-    kind: ColorErrorKind,
-}
-
-impl Display for ParseColorError {
-    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
-        match self.kind {
-            ColorErrorKind::InvalidHexit => write!(f, "invalid hexit found in string"),
-            ColorErrorKind::InvalidFormat => write!(f, "string does not conform to hex format"),
-        }
-    }
-}
-
-#[derive(Clone, Copy)]
-struct Color {
-    data: [u8; 4],
-}
-
-impl Color {
-    fn new(r: u8, g: u8, b: u8) -> Self {
-        Self {
-            data: [r, g, b, 0xff],
-        }
-    }
-
-    fn inverted(&self) -> Self {
-        Color::new(!self.data[0], !self.data[1], !self.data[2])
-    }
-}
-
-impl FromStr for Color {
-    type Err = ParseColorError;
-
-    // TODO: Optimize
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        if s.len() != 7 || &s[0..1] != "#" {
-            return Err(ParseColorError {
-                kind: ColorErrorKind::InvalidFormat,
-            });
-        }
-
-        let Ok(r) = u8::from_str_radix(&s[1..3], 16) else {
-            return Err(ParseColorError {
-                kind: ColorErrorKind::InvalidHexit,
-            });
-        };
-        let Ok(g) = u8::from_str_radix(&s[3..5], 16) else {
-            return Err(ParseColorError {
-                kind: ColorErrorKind::InvalidHexit,
-            });
-        };
-        let Ok(b) = u8::from_str_radix(&s[5..7], 16) else {
-            return Err(ParseColorError {
-                kind: ColorErrorKind::InvalidHexit,
-            });
-        };
-
-        Ok(Color::new(r, g, b))
-    }
-}
-
-impl Into<mq::Color> for Color {
-    fn into(self) -> mq::Color {
-        self.data.into()
-    }
-}
-
-impl ToString for Color {
-    fn to_string(&self) -> String {
-        format!(
-            "#{:02x}{:02x}{:02x}",
-            self.data[0], self.data[1], self.data[2]
-        )
-    }
 }
 
 pub struct Ui {

@@ -1,3 +1,4 @@
+mod color;
 mod ui;
 
 use macroquad::prelude::*;
