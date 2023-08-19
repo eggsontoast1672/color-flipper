@@ -1,6 +1,11 @@
+mod label;
+
 use macroquad::prelude::{self as mq, *};
 
-use crate::color::Color;
+use crate::{
+    color::Color,
+    ui::label::{Label, Text, TextLabel},
+};
 
 const COLOR_WIDTH: f32 = WINDOW_WIDTH / 2.0 - COLOR_HORIZONTAL_PADDING * 2.0 - LINE_THICKNESS / 2.0;
 const COLOR_HEIGHT: f32 = 50.0;
@@ -23,12 +28,11 @@ const TEXT_COLOR: mq::Color = BLACK;
 pub const WINDOW_WIDTH: f32 = 800.0;
 pub const WINDOW_HEIGHT: f32 = 600.0;
 
-fn draw_rounded_rectangle(x: f32, y: f32, w: f32, h: f32, r: f32, color: mq::Color) {
+pub fn draw_rounded_rectangle(x: f32, y: f32, w: f32, h: f32, r: f32, color: mq::Color) {
     draw_circle(x + r, y + r, r, color);
-    draw_circle(x + w - r, y + r, r, color); // this
+    draw_circle(x + w - r, y + r, r, color);
     draw_circle(x + r, y + h - r, r, color);
-    draw_circle(x + w - r, y + h - r, r, color); // this
-
+    draw_circle(x + w - r, y + h - r, r, color);
     draw_rectangle(x + r, y, w - 2.0 * r, h, color);
     draw_rectangle(x, y + r, w, h - 2.0 * r, color);
 }
@@ -97,45 +101,33 @@ impl Ui {
             TEXT_COLOR,
         );
 
-        // Left color field border
-        draw_rounded_rectangle(
-            COLOR_HORIZONTAL_PADDING,
-            COLOR_VERTICAL_PADDING,
-            COLOR_WIDTH,
-            COLOR_HEIGHT,
-            COLOR_RADIUS,
-            LINE_COLOR,
-        );
-
-        // Left color field
-        draw_rounded_rectangle(
-            COLOR_HORIZONTAL_PADDING + LINE_THICKNESS,
-            COLOR_VERTICAL_PADDING + LINE_THICKNESS,
-            COLOR_WIDTH - LINE_THICKNESS * 2.0,
-            COLOR_HEIGHT - LINE_THICKNESS * 2.0,
-            COLOR_RADIUS - LINE_THICKNESS,
-            WHITE,
-        );
-
-        // Right color field border
-        draw_rounded_rectangle(
-            WINDOW_WIDTH / 2.0 + LINE_THICKNESS / 2.0 + COLOR_HORIZONTAL_PADDING,
-            COLOR_VERTICAL_PADDING,
-            COLOR_WIDTH,
-            COLOR_HEIGHT,
-            COLOR_RADIUS,
-            LINE_COLOR,
-        );
-
-        // Right color field
-        draw_rounded_rectangle(
-            WINDOW_WIDTH / 2.0 + LINE_THICKNESS / 2.0 + COLOR_HORIZONTAL_PADDING + LINE_THICKNESS,
-            COLOR_VERTICAL_PADDING + LINE_THICKNESS,
-            COLOR_WIDTH - LINE_THICKNESS * 2.0,
-            COLOR_HEIGHT - LINE_THICKNESS * 2.0,
-            COLOR_RADIUS - LINE_THICKNESS,
-            WHITE,
+        Label::new(
+            Vec2::new(COLOR_HORIZONTAL_PADDING, COLOR_VERTICAL_PADDING),
+            Vec2::new(COLOR_WIDTH, COLOR_HEIGHT),
         )
+        .draw();
+
+        // Left color field text
+        draw_text(&self.color.to_string(), 0.0, 50.0, 20.0, TEXT_COLOR);
+
+        Label::new(
+            Vec2::new(
+                WINDOW_WIDTH / 2.0 + LINE_THICKNESS / 2.0 + COLOR_HORIZONTAL_PADDING,
+                COLOR_VERTICAL_PADDING,
+            ),
+            Vec2::new(COLOR_WIDTH, COLOR_HEIGHT),
+        )
+        .draw();
+
+        let l = TextLabel::new(
+            Vec2::new(100.0, 100.0),
+            Text {
+                data: String::from("Test Label :))))"),
+                font_size: 24,
+            },
+        );
+
+        l.draw();
     }
 
     pub fn update(&mut self) {
