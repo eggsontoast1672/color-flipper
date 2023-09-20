@@ -2,6 +2,8 @@ mod color;
 mod ui;
 
 use macroquad::prelude::*;
+use macroquad::ui::widgets::Window;
+
 use ui::Ui;
 
 fn window_conf() -> Conf {
@@ -16,12 +18,17 @@ fn window_conf() -> Conf {
 
 #[macroquad::main(window_conf)]
 async fn main() {
-    let mut ui = Ui::default();
+    let mut myui = Ui::default();
     loop {
         clear_background(BLACK);
 
-        ui.update();
-        ui.draw();
+        myui.update();
+        myui.draw();
+
+        Window::new(0, Vec2::new(100.0, 100.0), Vec2::new(100.0, 100.0))
+            .label("Label")
+            .titlebar(true)
+            .ui(&mut *macroquad::ui::root_ui(), |_| {});
 
         next_frame().await;
     }
